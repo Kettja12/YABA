@@ -1,0 +1,85 @@
+﻿@page "/Login"
+@inject IStringLocalizer<Resource> R
+@inject StateContainer stateContainer
+@inject ApiService ApiService
+<PageTitle>@R["Login"]</PageTitle>
+<div class="d-flex justify-content-center">
+
+    <form style="max-width:400px">
+        <h1>@R["Login"]</h1>
+        <div class="mb-3">
+            <label for="username" class="form-label">@R["Username"]</label>
+            <input type="text" class="form-control" id="username" @bind="loginRequest.Username" />
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">@R["Password"]</label>
+            <input type="password" class="form-control" id="password" @bind="loginRequest.Password">
+        </div>
+        @if (stateContainer.Databases?.Count > 1)
+        {
+            <div class="mb-3">
+                <select class="form-select mt-1" @onchange="@((ChangeEventArgs e) => selectDatabase(e))">
+                    <option value="">@R["Select database"]</option>
+                    @foreach (var item in stateContainer.Databases)
+                    {
+                        <option class="dropdown-item" value="@item">@item</option>
+                    }
+                </select>
+            </div>
+        }
+        <button type="button" class="btn btn-primary m-1" @onclick="LoginAsync" disabled=@spinner?.IsBusy>@R["Login"]</button>
+        <Spinner @ref="spinner"></Spinner>
+        <SmallAlert @ref="alert"></SmallAlert>
+    </form>
+</div>
+
+@code {
+    private LoginRequest loginRequest { get; set; } = new(){Username="",Password=""};
+    private SmallAlert? alert;
+    private Spinner? spinner;
+    private string database = "";
+    private async Task selectDatabase(ChangeEventArgs e)
+    {
+        database = e.Value.ToString();
+        //await LoginAsync();
+    }
+    private async Task LoginAsync()
+    {
+        try
+        {
+            if (spinner != null) spinner.On();
+            MasterLoginResponse? message = await ApiService.PostAsync<MasterLoginResponse>("Master/Login", loginRequest);
+            if (spinner != null) spinner.Off();
+            if (message == null || message.AuthToken == "")
+            {
+                if (alert != null) alert.Show("Login attempt failed.", "200px");
+                return;
+            }
+            stateContainer.AuthToken = message.AuthToken;
+            stateContainer.Databases = message.Databases;
+            if (message.Databases != null)
+            {
+                if (message.Databases.Count > 1)
+                {
+                    return;
+                }
+                database = message.Databases.First();
+            }
+            else if (message.Databases == null || message.Databases.Any() == false)
+            {
+                if (alert != null) alert.Show(R["User has no databases connected"], "280px");
+                return;
+            }
+            if (stateContainer.Databases == null || stateContainer.Databases.FirstOrDefault(database) == null)
+            {
+                if (alert != null) alert.Show(R["Invalid databasename."], "280px");
+                return;
+            }
+        }
+        catch (Exception e)
+        {
+            if (spinner != null) spinner.Off();
+            if (alert != null) alert.Show(e.Message, "280px");
+        }
+    }
+}

@@ -1,0 +1,33 @@
+﻿@inject IStringLocalizer<Resource> R
+@if (IsVisible)
+{
+    <div class="alert alert-warning m-4 " role="alert"
+         style='display: @(string.IsNullOrEmpty(alertText) ? "none" : "block")'>
+        @R[alertText]
+    </div>
+
+
+}
+
+@code {
+    public bool IsVisible { get; set; }
+    public string alertText="";
+    public string dispStyle="";
+    public async void Show(string message,string width)
+    {
+        dispStyle = "position: fixed; z-index:100; width:" + width;
+        alertText = message;
+        IsVisible = true;
+        StateHasChanged();
+        await Task.Delay(5000);
+        Hide();
+
+    }
+
+    public void  Hide()
+    {
+        alertText = "";
+        IsVisible = false;
+        StateHasChanged();
+    }
+}

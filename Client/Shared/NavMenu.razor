@@ -1,0 +1,99 @@
+﻿@inject IJSRuntime JS
+@inject ApiService ApiService
+@inject StateContainer StateContainer
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">YABA @dateTime</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="login">
+                <span class="oi oi-account-login" aria-hidden="true"></span> Login
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" @onchange="e=>{ToggleTheme();}" checked="@screenMode">
+            </div>
+        </div>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private bool screenMode = false;
+    private string dateTime { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        var timer = new System.Threading.Timer((_) =>
+        {
+
+            InvokeAsync(async () =>
+            {
+                dateTime = await GetValue();
+                StateHasChanged();
+            });
+        }, null, 0, 20000);
+
+    }
+
+    private async Task<string> GetValue()
+    {
+        RefreshRequest request = new() { AuthToken = StateContainer.AuthToken};
+        MasterLoginResponse? message = await ApiService.PostAsync<MasterLoginResponse>("Master/RefreshToken", request);
+        if (long.TryParse(message.AuthToken, out long tics)){
+            StateContainer.AuthToken = message.AuthToken;
+            DateTime dt = new DateTime(tics);
+            return dt.ToString();
+        }
+        else
+        {
+            StateContainer.AuthToken = "";
+        };
+        return "";
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var theme = await JS.InvokeAsync<string>("getTheme");
+            screenMode = theme == "dark";
+            StateHasChanged();
+        }
+    }
+
+    private async void ToggleTheme()
+    {
+
+        screenMode = !screenMode;
+        if (screenMode)
+        {
+            await JS.InvokeVoidAsync("setTheme", "dark");
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("setTheme", "light");
+        }
+    }
+
+
+
+}

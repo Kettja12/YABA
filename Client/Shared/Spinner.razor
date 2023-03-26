@@ -1,0 +1,27 @@
+﻿@inject IStringLocalizer<Resource> R
+@if (IsBusy)
+{
+    <div style=" position: fixed; z-index:100">
+
+    <div class="spinner-border" role="status" >
+        <span class="visually-hidden">@R["Loading..."]</span>
+    </div>
+    </div>
+}
+
+@code {
+    public bool IsBusy { get; set; }
+    public async void On()
+    {
+        IsBusy = true;
+        await Task.Delay(2000);
+        StateHasChanged();
+      
+    }
+
+    public void  Off()
+    {
+        IsBusy = false;
+        StateHasChanged();
+    }
+}
