@@ -1,5 +1,7 @@
 ﻿using Master.Model;
 using Master.Services;
+using YABA.Shared;
+using YABA.Shared.Master;
 
 namespace Master
 {
@@ -18,16 +20,16 @@ namespace Master
             })
             .AddEndpointFilter<AuthorizationFilter>();
             
-            app.MapGet("GetCurrentUser", async (MasterServices services, HttpRequest request) =>
+            app.MapGet("GetLoginUser", (MasterServices services, HttpRequest request) =>
             {
                 string? authToken = request.Headers["X-Api-Key"];
-                return Results.Ok(await services.GetCurrentUserAsync(authToken));
+                return Results.Ok(services.GetLoginUser(authToken));
             })
             .AddEndpointFilter<AuthorizationFilter>();
-            app.MapPost("SetUserDatabase", async (MasterServices services, SeUserDatabaseRequest request, HttpRequest httpRequest) =>
+            app.MapPost("SetLoginUserDatabase", (MasterServices services, SeUserDatabaseRequest request, HttpRequest httpRequest) =>
             {
                 string? authToken = httpRequest.Headers["X-Api-Key"];
-                return Results.Ok(await services.SetUserDatabaseAsync(authToken,request));
+                return Results.Ok(services.SetLoginUserDatabase(authToken,request));
             })
             .AddEndpointFilter<AuthorizationFilter>();
         }

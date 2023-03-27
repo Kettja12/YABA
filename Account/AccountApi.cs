@@ -1,13 +1,15 @@
 ﻿using Account.Model;
 using Account.Services;
+using YABA.Shared;
 
 public static class AccountApi
 {
     public static void AddAccountApi(this WebApplication app)
     {
-        app.MapPost("Login", async (HttpContext httpContext, AccountServices services, LoginRequest request) =>
+        app.MapPost("Login", async (HttpContext httpContext, AccountServices services, LoginRequest request, HttpRequest httpRequest) =>
         {
-            return Results.Ok(await services.LoginAsync(request));
+            string? authToken = httpRequest.Headers["X-Api-Key"];
+            return Results.Ok(await services.LoginAsync(request,authToken));
         })
         .AddEndpointFilter<AuthorizationFilter>();
 

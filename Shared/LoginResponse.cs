@@ -1,4 +1,4 @@
-﻿namespace Account.Model;
+﻿namespace YABA.Shared;
 public class LoginResponse
 {
     required public string Username { get; set; }

@@ -1,4 +1,4 @@
-﻿namespace Client.Model;
+﻿namespace YABA.Shared.Master;
 
 public class SeUserDatabaseRequest
 {

@@ -21,9 +21,9 @@ public class ApiService
         cts.CancelAfter(TimeSpan.FromSeconds(30));
         var request = new HttpRequestMessage(HttpMethod.Post, service);
 
-        if (string.IsNullOrEmpty(stateContainer.AuthToken) == false)
+        if (stateContainer.LoginUser != null && string.IsNullOrEmpty(stateContainer.LoginUser.AuthToken) == false)
         {
-            request.Headers.Add("X-Api-Key", stateContainer.AuthToken);
+            request.Headers.Add("X-Api-Key", stateContainer.LoginUser.AuthToken);
         }
         string jsonData = JsonSerializer.Serialize(data);
         request.Content = new StringContent(jsonData, Encoding.UTF8, "application/json");
@@ -46,9 +46,9 @@ public class ApiService
         cts.CancelAfter(TimeSpan.FromSeconds(30));
         var request = new HttpRequestMessage(HttpMethod.Get, service);
 
-        if (string.IsNullOrEmpty(stateContainer.AuthToken) == false)
+        if (stateContainer.LoginUser != null && string.IsNullOrEmpty(stateContainer.LoginUser.AuthToken) == false)
         {
-            request.Headers.Add("X-Api-Key", stateContainer.AuthToken);
+            request.Headers.Add("X-Api-Key", stateContainer.LoginUser.AuthToken);
         }
         var response = await client.SendAsync(request);
 

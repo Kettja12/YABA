@@ -16,12 +16,14 @@
             <label for="password" class="form-label">@R["Password"]</label>
             <input type="password" class="form-control" id="password" @bind="loginRequest.Password">
         </div>
-        @if (stateContainer.Databases?.Count > 1)
+        @if (stateContainer.LoginUser!=null 
+         && stateContainer.LoginUser.Databases!= null
+        && stateContainer.LoginUser.Databases.Count > 1)
         {
             <div class="mb-3">
                 <select class="form-select mt-1" @onchange="@((ChangeEventArgs e) => selectDatabase(e))">
                     <option value="">@R["Select database"]</option>
-                    @foreach (var item in stateContainer.Databases)
+                    @foreach (var item in stateContainer.LoginUser.Databases)
                     {
                         <option class="dropdown-item" value="@item">@item</option>
                     }
@@ -67,15 +69,14 @@
     private async Task<bool> LoginMasterAsync()
     {
         if (spinner != null) spinner.On();
-        MasterLoginResponse? message = await ApiService.PostAsync<MasterLoginResponse>("Master/Login", loginRequest);
+        LoginUser? message = await ApiService.PostAsync<LoginUser>("Master/Login", loginRequest);
         if (spinner != null) spinner.Off();
         if (message == null || message.AuthToken == "")
         {
             if (alert != null) alert.Show("Login attempt failed.", "200px");
             return false;
         }
-        stateContainer.AuthToken = message.AuthToken;
-        stateContainer.Databases = message.Databases;
+        stateContainer.LoginUser = message;
         if (message.Databases != null)
         {
             if (message.Databases.Count > 1)
@@ -89,7 +90,9 @@
             if (alert != null) alert.Show(R["User has no databases connected"], "280px");
             return false;
         }
-        if (stateContainer.Databases == null || stateContainer.Databases.FirstOrDefault(database) == null)
+        if (stateContainer.LoginUser == null 
+            ||stateContainer.LoginUser.Databases ==null
+            ||stateContainer.LoginUser.Databases.FirstOrDefault(database) == null)
         {
             if (alert != null) alert.Show(R["Invalid databasename."], "280px");
             return false;
@@ -99,13 +102,13 @@
     private async Task<bool> LoginClientDBAsync()
     {
         SeUserDatabaseRequest request = new() { DatabaseName = database };
-        CurrentUser? message2 = await ApiService.PostAsync<CurrentUser>("Master/SetUserDatabase", request);
+        LoginUser? message2 = await ApiService.PostAsync<LoginUser>("Master/SetLoginUserDatabase", request);
         if (message2 == null || message2.UserName == "")
         {
             if (alert != null) alert.Show(R["User database selection failed."], "280px");
             return false;
         }
-        LoginResponse? message3 = await ApiService.PostAsync<LoginResponse>(database + "/Login", loginRequest);
+        CurrentUser? message3 = await ApiService.PostAsync<CurrentUser>(database + "/Login", loginRequest);
         if (message3 == null || message3.Username == "")
         {
             if (alert != null) alert.Show("Login attempt failed.", "200px");

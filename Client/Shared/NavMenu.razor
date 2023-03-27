@@ -56,16 +56,16 @@
 
     private async Task<string> GetValue()
     {
-        RefreshRequest request = new() { AuthToken = StateContainer.AuthToken};
+        if (StateContainer.LoginUser == null) return "";
+        RefreshRequest request = new() { AuthToken = StateContainer.LoginUser.AuthToken};
         RefreshResponse? message = await ApiService.PostAsync<RefreshResponse>("Master/RefreshToken", request);
-        if (long.TryParse(message.AuthToken, out long tics)){
-            StateContainer.RefreshTime = message.refreshTime;
+        if (message!=null && long.TryParse(message.AuthToken, out long tics)){
+            StateContainer.LoginUser.RefreshTime = message.refreshTime;
             return message.refreshTime.ToString();
         }
         else
         {
-            StateContainer.RefreshTime = null;
-            StateContainer.AuthToken = "";
+            StateContainer.LoginUser= null;
         };
         return "";
     }

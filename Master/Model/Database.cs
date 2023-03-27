@@ -1,4 +1,4 @@
-﻿namespace Master.Model.Master;
+﻿namespace Master.Model;
 public class Database
 {
     public int Id { get; set; }

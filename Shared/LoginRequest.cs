@@ -1,4 +1,4 @@
-﻿namespace Master.Model
+﻿namespace YABA.Shared
 {
     public class LoginRequest
     {

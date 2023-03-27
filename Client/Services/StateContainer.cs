@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
+using YABA.Shared.Account;
+using YABA.Shared.Master;
 
 namespace Client.Services
 {
     public class StateContainer
     {
-        required public string AuthToken { get; set; }
-        public DateTime? RefreshTime { get; set; }
-        public List<string>? Databases { get; set; }
+        public LoginUser? LoginUser { get; set; }
+        public CurrentUser? CurrentUser { get; set; }
 
     }
 }

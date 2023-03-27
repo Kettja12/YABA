@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Master.Model.Master;
+using Master.Model;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations.Schema;
 

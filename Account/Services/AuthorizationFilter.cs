@@ -2,7 +2,8 @@
 using Account.Services;
 using Account.Model;
 using Client.Services;
-using Master.Model;
+using YABA.Shared;
+using YABA.Shared.Master;
 
 public class AuthorizationFilter : IEndpointFilter
 {
@@ -20,11 +21,11 @@ public class AuthorizationFilter : IEndpointFilter
         string? apikey = context.HttpContext.Request.Headers["X-Api-Key"];
         if (string.IsNullOrEmpty(apikey) == false)
         {
-            var response = services.GetCacheItem<CurrentUser>("user", apikey);
+            var response = services.GetCacheItem<LoginUser>("LoginUser", apikey);
             if (response== null)
             {
-                var user=await apiService.GetAsync<CurrentUser>(apikey, "Master/GetCurrentUser");
-                services.SetCacheItem("user", apikey, user);
+                var user=await apiService.GetAsync<LoginUser>(apikey, "Master/GetLoginUser");
+                services.SetCacheItem("LoginUser", apikey, user);
 
             }
             return await next(context);
