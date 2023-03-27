@@ -11,14 +11,15 @@ namespace Master.Services
     {
         private CacheServices services;
         private MasterContext context;
-        public MasterServices(CacheServices services,MasterContext context) {
+        public MasterServices(CacheServices services, MasterContext context)
+        {
             this.services = services;
             this.context = context;
 
         }
         public async Task<MasterLoginResponse> LoginMasterAsync(LoginRequest request)
         {
-            var result = new MasterLoginResponse() { AuthToken = ""};
+            var result = new MasterLoginResponse() { AuthToken = "" };
             if (string.IsNullOrEmpty(request.Username)
           || string.IsNullOrEmpty(request.Password)) return result;
             User? user = await context
@@ -34,27 +35,28 @@ namespace Master.Services
             if (databasenames.Any())
             {
                 result.Databases = databasenames;
+                user.Databases = databasenames;
             }
             var authToken = DateTime.Now.Ticks.ToString();
+            user.RefreshTime = DateTime.Now;
             services.SetCacheItem("user", authToken, user);
-            result.AuthToken= authToken;
+            result.AuthToken = authToken;
             return result;
         }
-        public MasterLoginResponse RefreshToken(RefreshRequest request)
+        public RefreshResponse RefreshToken(String authToken)
         {
-            var user = services.GetCacheItem<User>("user", request.AuthToken);
-            services.DeleteCacheItem("user",request.AuthToken);
-            if (long.TryParse(request.AuthToken, out long tics))
+            var user = services.GetCacheItem<User>("user", authToken);
+            if (user != null)
             {
-                DateTime dt = new DateTime(tics).AddMinutes(10);
-                if (DateTime.Now.Ticks<dt.Ticks)
+                if (DateTime.Now.Ticks < user.RefreshTime.AddMinutes(10).Ticks)
                 {
-                    var response = new MasterLoginResponse() { AuthToken = DateTime.Now.Ticks.ToString()};
-                    services.SetCacheItem("user", response.AuthToken, user);
+                    user.RefreshTime = DateTime.Now;
+                    services.SetCacheItem("user", authToken, user);
+                    var response = new RefreshResponse() { AuthToken = authToken, refreshTime = user.RefreshTime };
                     return response;
                 }
-            };
-            return new MasterLoginResponse() { AuthToken = ""};
+            }
+            return new RefreshResponse() { AuthToken = "", refreshTime = new DateTime() };
         }
         public string CreateHash(string s)
         {
@@ -62,6 +64,42 @@ namespace Master.Services
             HashAlgorithm sha = SHA256.Create();
             byte[] result = sha.ComputeHash(dataArray);
             return Encoding.Unicode.GetString(result);
+        }
+
+        public async Task<CurrentUser> GetCurrentUserAsync(string authToken)
+        {
+            var user = services.GetCacheItem<User>("user", authToken);
+            if (user != null)
+            {
+                return new CurrentUser()
+                {
+                    UserName = user.Username,
+                    AuthToken = authToken,
+                    Database = user.CurrentDatabase
+                };
+            }
+            return new CurrentUser() { UserName = "", AuthToken = "" };
+
+        }
+        public async Task<CurrentUser> SetUserDatabaseAsync(string authToken, SeUserDatabaseRequest request)
+        {
+            var user = services.GetCacheItem<User>("user", authToken);
+            if (user != null)
+            {
+                user.CurrentDatabase = request.DatabaseName;
+                if (user.Databases.Contains(request.DatabaseName))
+                {
+                    services.SetCacheItem("user", authToken, user);
+                    return new CurrentUser()
+                    {
+                        UserName = user.Username,
+                        AuthToken = authToken,
+                        Database = user.CurrentDatabase
+                    };
+                }
+            }
+            return new CurrentUser() { UserName = "", AuthToken = "" };
+
         }
     }
 }

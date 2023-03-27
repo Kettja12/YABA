@@ -2,6 +2,7 @@
 @inject IStringLocalizer<Resource> R
 @inject StateContainer stateContainer
 @inject ApiService ApiService
+@inject NavigationManager NavigationManager
 <PageTitle>@R["Login"]</PageTitle>
 <div class="d-flex justify-content-center">
 
@@ -34,47 +35,28 @@
 </div>
 
 @code {
-    private LoginRequest loginRequest { get; set; } = new(){Username="",Password=""};
+    private LoginRequest loginRequest { get; set; } = new() { Username = "", Password = "" };
     private SmallAlert? alert;
     private Spinner? spinner;
     private string database = "";
     private async Task selectDatabase(ChangeEventArgs e)
     {
         database = e.Value.ToString();
-        //await LoginAsync();
+        await LoginAsync();
     }
     private async Task LoginAsync()
     {
         try
         {
-            if (spinner != null) spinner.On();
-            MasterLoginResponse? message = await ApiService.PostAsync<MasterLoginResponse>("Master/Login", loginRequest);
-            if (spinner != null) spinner.Off();
-            if (message == null || message.AuthToken == "")
+            if (database == "")
             {
-                if (alert != null) alert.Show("Login attempt failed.", "200px");
-                return;
+                bool isOk= await LoginMasterAsync();
+                if (isOk == false) return;
             }
-            stateContainer.AuthToken = message.AuthToken;
-            stateContainer.Databases = message.Databases;
-            if (message.Databases != null)
-            {
-                if (message.Databases.Count > 1)
-                {
-                    return;
-                }
-                database = message.Databases.First();
-            }
-            else if (message.Databases == null || message.Databases.Any() == false)
-            {
-                if (alert != null) alert.Show(R["User has no databases connected"], "280px");
-                return;
-            }
-            if (stateContainer.Databases == null || stateContainer.Databases.FirstOrDefault(database) == null)
-            {
-                if (alert != null) alert.Show(R["Invalid databasename."], "280px");
-                return;
-            }
+            bool isOk2 = await LoginClientDBAsync();
+            if (isOk2 == false) return;
+            NavigationManager.NavigateTo("/");
+
         }
         catch (Exception e)
         {
@@ -82,4 +64,55 @@
             if (alert != null) alert.Show(e.Message, "280px");
         }
     }
+    private async Task<bool> LoginMasterAsync()
+    {
+        if (spinner != null) spinner.On();
+        MasterLoginResponse? message = await ApiService.PostAsync<MasterLoginResponse>("Master/Login", loginRequest);
+        if (spinner != null) spinner.Off();
+        if (message == null || message.AuthToken == "")
+        {
+            if (alert != null) alert.Show("Login attempt failed.", "200px");
+            return false;
+        }
+        stateContainer.AuthToken = message.AuthToken;
+        stateContainer.Databases = message.Databases;
+        if (message.Databases != null)
+        {
+            if (message.Databases.Count > 1)
+            {
+                return false;
+            }
+            database = message.Databases.First();
+        }
+        else if (message.Databases == null || message.Databases.Any() == false)
+        {
+            if (alert != null) alert.Show(R["User has no databases connected"], "280px");
+            return false;
+        }
+        if (stateContainer.Databases == null || stateContainer.Databases.FirstOrDefault(database) == null)
+        {
+            if (alert != null) alert.Show(R["Invalid databasename."], "280px");
+            return false;
+        }
+        return true;
+    }
+    private async Task<bool> LoginClientDBAsync()
+    {
+        SeUserDatabaseRequest request = new() { DatabaseName = database };
+        CurrentUser? message2 = await ApiService.PostAsync<CurrentUser>("Master/SetUserDatabase", request);
+        if (message2 == null || message2.UserName == "")
+        {
+            if (alert != null) alert.Show(R["User database selection failed."], "280px");
+            return false;
+        }
+        LoginResponse? message3 = await ApiService.PostAsync<LoginResponse>(database + "/Login", loginRequest);
+        if (message3 == null || message3.Username == "")
+        {
+            if (alert != null) alert.Show("Login attempt failed.", "200px");
+            return false;
+        }
+        return true;
+
+    }
+
 }
