@@ -1,0 +1,27 @@
+﻿@hostname = https://localhost
+@port = 7000
+@host ={{hostname}}:{{port}}
+@contentType=application/json
+
+### 
+#@name requestlogin
+POST {{host}}/Master/Login 
+Content-Type:{{contentType}}
+<@ ./demo.xml
+
+{
+	"username":"jari",
+	"password":"12345"
+}
+
+###
+# @name loginstart
+@loginToken ="01GXEQ7DEYDBYRKJTV8TTJCERW"
+//@loginToken ={{requestlogin.response.body.$.loginUser.authToken}}
+POST {{host}}/Start/Login 
+Content-Type:{{contentType}}
+
+{
+	"authToken":{{loginToken}}
+}
+###

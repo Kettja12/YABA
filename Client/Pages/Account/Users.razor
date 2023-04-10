@@ -1,0 +1,17 @@
+﻿@page "/Users"
+@inject IStringLocalizer<Resource> R
+@inject StateContainer StateContainer
+@inject ApiService ApiService
+@inject NavigationManager NavigationManager
+
+<h3>Users</h3>
+
+@code {
+    protected override void OnInitialized()
+    {
+
+        if (StateContainer.CurrentUser.Functions.Contains(AppCodes.AddModifyUser)==false)
+            NavigationManager.NavigateTo("/");
+        base.OnInitialized();
+    }
+}

@@ -1,0 +1,110 @@
+﻿@page "/User"
+@inject StateContainer stateContainer
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<Resource> R
+@inject ApiService ApiService
+@if (stateContainer.CurrentUser != null)
+{
+    <form style="max-width:400px">
+        <div class="mb-3">
+            <label class="form-label">@R["Username"]</label>
+            <input class="form-control" type="text" @bind="@stateContainer.CurrentUser.Username" disabled>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">@R["First Name"]</label>
+            <input class="form-control" type="text" @bind="@stateContainer.CurrentUser.FirstName">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">@R["Last Name"]</label>
+            <input class="form-control" type="text" @bind="@stateContainer.CurrentUser.LastName">
+        </div>
+        <button type="button" class="btn btn-primary m-1" @onclick="SaveAsync" disabled=@spinner?.IsBusy>@R["Save"]</button>
+
+        <div class="mb-3">
+            <label class="form-label">@R["Old password"]</label>
+            <input class="form-control" type="password" @bind="@OldPassword">
+        </div>
+        <div class="mb-3">
+
+            <label class="form-label">@R["New password"]</label>
+            <input class="form-control" type="password" @bind="@NewPassword">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">@R["Repeat password"]</label>
+            <input class="form-control" type="password" @bind="@PasswordVerification">
+        </div>
+        <button type="button" class="btn btn-primary m-1" @onclick="SavePasswordAsync" disabled=@spinner?.IsBusy>@R["Change password"]</button>
+        <Spinner @ref="spinner"></Spinner>
+        <SmallAlert @ref="alert"></SmallAlert>
+    </form>
+}
+@code {
+
+    private SmallAlert? alert;
+    private Spinner? spinner;
+    public string OldPassword = "";
+    public string NewPassword = "";
+    public string PasswordVerification = "";
+    protected override void OnInitialized()
+    {
+        if (stateContainer.IsLogin == false)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+        base.OnInitialized();
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            dynamic saveUserRequest = new ExpandoObject();
+            saveUserRequest.User = stateContainer.CurrentUser;
+            spinner?.On();
+            UserResponse? response = await ApiService.PostAsync<UserResponse>("(db)/SaveUser", saveUserRequest);
+            spinner?.Off();
+            if (response == null)
+            {
+                alert?.Show(R["User save failed."], "200px");
+                return;
+            }
+            alert?.Show(R[response.Message], "275px");
+        }
+        catch (Exception e)
+        {
+            spinner?.Off();
+            alert?.Show(e.Message, "275px");
+        }
+    }
+    private async Task SavePasswordAsync()
+    {
+        try
+        {
+            if (NewPassword == OldPassword) return;
+            if (NewPassword != PasswordVerification)
+            {
+                alert?.Show("Password and password verification are not same.", "275px");
+                return;
+            }
+            dynamic savePasswordRequest = new ExpandoObject();
+            savePasswordRequest.OldPassword = OldPassword;
+            savePasswordRequest.NewPassword = NewPassword;
+            spinner?.On();
+            BaseResponse? response = await ApiService.PostAsync<BaseResponse>("Master/SavePassword", savePasswordRequest);
+            spinner?.Off();
+            if (response == null)
+            {
+                alert?.Show(R["User save failed."], "200px");
+                return;
+            }
+            alert?.Show(R[response.Message], "275px");
+
+        }
+        catch (Exception e)
+        {
+            spinner?.Off();
+            alert?.Show(e.Message, "275px");
+        }
+    }
+}
