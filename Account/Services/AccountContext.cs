@@ -18,8 +18,8 @@ public class AccountContext : DbContext
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<UserUsergroup> UserUsergroups { get; set; }
     public virtual DbSet<Usergroup> Usergroups { get; set; }
-    public virtual DbSet<UsergroupFunction> UsergroupFunctions { get; set; }
-    public virtual DbSet<Function> Functions { get; set; }
+    public virtual DbSet<UsergroupRight> UsergroupRights { get; set; }
+    public virtual DbSet<Right> Rights { get; set; }
 
 
 }

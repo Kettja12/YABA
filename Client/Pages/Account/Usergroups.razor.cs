@@ -13,7 +13,7 @@ namespace Client.Pages.Account
         {
             try
             {
-                if (StateContainer.CurrentUser.Functions.Contains(AppCodes.AddModifyUsergroups) == false)
+                if (StateContainer.CurrentUser.Rights.Contains(AppCodes.AddModifyUsergroups) == false)
                 {
                     NavigationManager.NavigateTo("/");
                     return;

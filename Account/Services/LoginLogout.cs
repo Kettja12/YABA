@@ -36,9 +36,9 @@ public partial class AccountServices
                     .UserUsergroups
                     .Where(x => x.UserId == user.Id)
                     .Select(x => x.UsergroupId);
-            result.User.Functions = await context.UsergroupFunctions
+            result.User.Rights = await context.UsergroupRights
                 .Where(x => q.Contains(x.UsergroupId))
-                .Select(x => x.FunctionId)
+                .Select(x => x.RightId)
                 .ToListAsync();
             services.SetCacheItem(CurrentUser, request.AuthToken, result.User);
             result.Status = 0;

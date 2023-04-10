@@ -29,7 +29,7 @@ public partial class AccountServices
         response.Message = Messages.LoginToUserDbFailed;
         if (IsLoggedIn(request.AuthToken) == false) return response;
         response.CheckListItems = await context
-        .Functions
+        .Rights
         .Select(x => new { Id = x.Id, Value = x.Name })
         .ToListAsync(ct);
         response.Status = 0;
@@ -45,11 +45,11 @@ public partial class AccountServices
         try
         {
             if (IsLoggedIn(request.AuthToken) == false) return response;
-            var q1 = await context.Functions.ToListAsync(ct);
+            var q1 = await context.Rights.ToListAsync(ct);
 
-            var q2 = await context.UsergroupFunctions
+            var q2 = await context.UsergroupRights
                     .Where(x => x.UsergroupId == request.IntField)
-                    .Select(x => x.FunctionId)
+                    .Select(x => x.RightId)
                     .ToListAsync(ct);
             response.CheckListItems = q1
                 .Select(x => new { id = x.Id, Value = x.Name, isChecked = q2.Contains(x.Id) })

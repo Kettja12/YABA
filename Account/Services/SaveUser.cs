@@ -39,7 +39,7 @@ public partial class AccountServices
         bool modifyCurrentUser = existingUser.Id == currentUser?.Id;
 
         if (modifyCurrentUser==false
-            && currentUser?.Functions.Contains(AppCodes.AddModifyUser) == false)
+            && currentUser?.Rights.Contains(AppCodes.AddModifyUser) == false)
         {
             response.Message = Messages.NoPermissionToModify;
             return response;
@@ -71,7 +71,7 @@ public partial class AccountServices
 
     private async Task<dynamic> InsertUserAsync(dynamic response, SaveUserRequest request, CancellationToken ct)
     {
-        if (currentUser?.Functions.Contains(AppCodes.AddModifyUser) == false)
+        if (currentUser?.Rights.Contains(AppCodes.AddModifyUser) == false)
         {
             response.Message = Messages.NoPermissionToInsert;
             return response;

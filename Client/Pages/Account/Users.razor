@@ -10,7 +10,7 @@
     protected override void OnInitialized()
     {
 
-        if (StateContainer.CurrentUser.Functions.Contains(AppCodes.AddModifyUser)==false)
+        if (StateContainer.CurrentUser.Rights.Contains(AppCodes.AddModifyUser)==false)
             NavigationManager.NavigateTo("/");
         base.OnInitialized();
     }

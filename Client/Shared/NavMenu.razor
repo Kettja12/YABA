@@ -29,7 +29,7 @@
                 </NavLink>
             </div>
 
-            @if (StateContainer.CurrentUser.Functions.Contains(AppCodes.Maintenance))
+            @if (StateContainer.CurrentUser.Rights.Contains(AppCodes.Maintenance))
             {
                 <div class="nav-item px-3">
                     <NavLink class="nav-link dropdown-toggle" href="#maintenance"
@@ -37,13 +37,13 @@
                         <span class="fa fa-gear me-2" aria-hidden="true"></span> @R["Maintenance"]
                     </NavLink>
                     <div class="@MaintenanceMenuCssClass ps-2">
-                        @if (StateContainer.CurrentUser.Functions.Contains(AppCodes.AddModifyUser))
+                        @if (StateContainer.CurrentUser.Rights.Contains(AppCodes.AddModifyUser))
                         {
                             <NavLink class="nav-link" href="users">
                                 <span class="fa fa-users me-2" aria-hidden="true"></span> @R["Users"]
                             </NavLink>
                         }
-                        @if (StateContainer.CurrentUser.Functions.Contains(AppCodes.AddModifyUsergroups))
+                        @if (StateContainer.CurrentUser.Rights.Contains(AppCodes.AddModifyUsergroups))
                         {
                             <NavLink class="nav-link" href="usergroups">
                                 <span class="fa fa-object-group me-2" aria-hidden="true"></span> @R["Manage Usergroups"]
