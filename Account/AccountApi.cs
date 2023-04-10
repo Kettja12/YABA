@@ -1,22 +1,47 @@
-﻿using Account.Model;
+﻿using Account;
 using Account.Services;
-using YABA.Shared;
+using ServicesShared;
 
 public static class AccountApi
 {
     public static void AddAccountApi(this WebApplication app)
     {
-        app.MapPost("Login", async (HttpContext httpContext, AccountServices services, LoginRequest request, HttpRequest httpRequest) =>
+        app.MapPost("Login", async (AccountServices services, AuthTokenRequest request) =>
         {
-            string? authToken = httpRequest.Headers["X-Api-Key"];
-            return Results.Ok(await services.LoginAsync(request,authToken));
-        })
-        .AddEndpointFilter<AuthorizationFilter>();
+            return Results.Ok(await services.LoginAsync(request));
+        });
 
-        //app.MapPost("RefreshToken", async (MasterServices services, RefreshRequest request) =>
-        //{
-        //    return Results.Ok(services.RefreshToken(request));
-        //})
-        //.AddEndpointFilter<AuthorizationFilter>();
+        app.MapPost("Logout", (AccountServices services, AuthTokenRequest request) =>
+        {
+            return Results.Ok(services.Logout(request));
+        });
+        app.MapPost("SaveUser", async (AccountServices services, AccountServices.SaveUserRequest request, CancellationToken ct) =>
+        {
+            return Results.Ok(await services.SaveUserAsync(request, ct));
+        });
+
+        app.MapPost("LoadUsergroups", async (AccountServices services, AuthTokenRequest request, CancellationToken ct) =>
+        {
+            return Results.Ok(await services.LoadUsergroupsAsync(request, ct));
+        });
+        app.MapPost("LoadFunctions", async (AccountServices services, AuthTokenRequest request, CancellationToken ct) =>
+        {
+            return Results.Ok(await services.LoadFunctionsAsync(request, ct));
+        });
+        app.MapPost("LoadUsergroupFunctions", async (AccountServices services, SimpleRequest request, CancellationToken ct) =>
+        {
+            return Results.Ok(await services.LoadUsergroupFunctionsAsync(request, ct));
+        });
+
+        app.MapPost("LoadUsergroupUsers", async (AccountServices services, SimpleRequest request, CancellationToken ct) =>
+        {
+            return Results.Ok(await services.LoadUsergroupUsersAsync(request, ct));
+        });
+        app.MapPost("LoadUsersNotInUsergroup", async (AccountServices services, SimpleRequest request, CancellationToken ct) =>
+        {
+            return Results.Ok(await services.LoadUsersNotInUsergroupAsync(request, ct));
+        });
+
+        
     }
 }

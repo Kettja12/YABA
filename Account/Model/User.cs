@@ -6,8 +6,6 @@ public class User
     public string LastName { get; set; } = null!;
     public string Username { get; set; } = null!;
     public bool Active { get; set; }
-    public bool Admin { get; set; }
     public string? LoginToken { get; set; }
-    public string? DashboardItems { get; set; }
-
+ 
 }

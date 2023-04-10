@@ -1,6 +1,8 @@
 ﻿@inject IJSRuntime JS
+@inject IStringLocalizer<Resource> R
 @inject ApiService ApiService
 @inject StateContainer StateContainer
+@inject NavigationManager NavigationManager
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -13,11 +15,63 @@
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="flex-column">
+          @if (StateContainer.IsLogin)
+        {
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="dashboard">
+                    <span class="fa fa-table-columns me-2" aria-hidden="true"></span> @R["Dashboard"]
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="reservation">
+                    <span class="fa fa-hotel me-2" aria-hidden="true"></span>@R["Reservation"]
+                </NavLink>
+            </div>
+
+            @if (StateContainer.CurrentUser.Functions.Contains(AppCodes.Maintenance))
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link dropdown-toggle" href="#maintenance"
+                    @onclick="ToggleMaintenanceMenu">
+                        <span class="fa fa-gear me-2" aria-hidden="true"></span> @R["Maintenance"]
+                    </NavLink>
+                    <div class="@MaintenanceMenuCssClass ps-2">
+                        @if (StateContainer.CurrentUser.Functions.Contains(AppCodes.AddModifyUser))
+                        {
+                            <NavLink class="nav-link" href="users">
+                                <span class="fa fa-users me-2" aria-hidden="true"></span> @R["Users"]
+                            </NavLink>
+                        }
+                        @if (StateContainer.CurrentUser.Functions.Contains(AppCodes.AddModifyUsergroups))
+                        {
+                            <NavLink class="nav-link" href="usergroups">
+                                <span class="fa fa-object-group me-2" aria-hidden="true"></span> @R["Manage Usergroups"]
+                            </NavLink>
+                        }
+                    </div>
+                </div>
+            }
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="User">
+                    <span class="oi oi-person" aria-hidden="true"></span> @StateContainer.CurrentUser.FirstName @StateContainer.CurrentUser.LastName
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="#logout" @onclick="@Logout">
+                    <span class="oi oi-account-logout" aria-hidden="true"></span> @R["Logout"]
+                </NavLink>
+            </div>
+        }
+        else
+        {
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="login">
                 <span class="oi oi-account-login" aria-hidden="true"></span> Login
             </NavLink>
         </div>
+        }
         <div class="nav-item px-3">
             <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" @onchange="e=>{ToggleTheme();}" checked="@screenMode">
@@ -25,6 +79,7 @@
         </div>
     </nav>
 </div>
+
 
 @code {
     private bool collapseNavMenu = true;
@@ -41,6 +96,7 @@
 
     protected override void OnInitialized()
     {
+        StateContainer.OnChange += StateHasChanged;
         base.OnInitialized();
         var timer = new System.Threading.Timer((_) =>
         {
@@ -50,22 +106,23 @@
                 dateTime = await GetValue();
                 StateHasChanged();
             });
-        }, null, 0, 20000);
+        }, null, 0, 100000);
 
     }
 
     private async Task<string> GetValue()
     {
-        if (StateContainer.LoginUser == null) return "";
-        RefreshRequest request = new() { AuthToken = StateContainer.LoginUser.AuthToken};
-        RefreshResponse? message = await ApiService.PostAsync<RefreshResponse>("Master/RefreshToken", request);
-        if (message!=null && long.TryParse(message.AuthToken, out long tics)){
+        if (StateContainer.IsAuthenticated==false) return "";
+        dynamic request = new ExpandoObject();
+        RefreshResponse? message = await ApiService
+            .PostAsync<RefreshResponse>("Master/RefreshToken", request);
+        if (message!=null && message.AuthToken!= string.Empty){
             StateContainer.LoginUser.RefreshTime = message.refreshTime;
             return message.refreshTime.ToString();
         }
         else
         {
-            StateContainer.LoginUser= null;
+            StateContainer.ResetLogin();
         };
         return "";
     }
@@ -80,6 +137,13 @@
         }
     }
 
+    private bool collapseMaintenanceMenu = false;
+    private string? MaintenanceMenuCssClass => collapseMaintenanceMenu ? "" : "d-none";
+    private void ToggleMaintenanceMenu()
+    {
+        ToggleNavMenu();
+        collapseMaintenanceMenu = !collapseMaintenanceMenu;
+    }
     private async void ToggleTheme()
     {
 
@@ -94,6 +158,21 @@
         }
     }
 
+    private async void Logout()
+    {
+        if (StateContainer.LoginUser != null)
+        {
+            dynamic request = new ExpandoObject();
+            RefreshResponse? message = await ApiService.PostAsync<RefreshResponse>(
+                StateContainer.LoginUser.CurrentDatabase + "/Logout",request);
+            message = await ApiService.PostAsync<RefreshResponse>("Master/Logout",request);
+        }
+        StateContainer.ResetLogin();
+    }
 
+    public void Dispose()
+    {
+        StateContainer.OnChange -= StateHasChanged;
+    }
 
 }

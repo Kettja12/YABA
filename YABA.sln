@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Master", "Master\Master.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Account", "Account\Account.csproj", "{F7CAC6AA-B880-47E9-884A-6A2F201503C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{5F668877-0590-4259-8CB7-0332F1988D95}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shared", "Shared\Shared.csproj", "{5F668877-0590-4259-8CB7-0332F1988D95}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceShared", "ServiceShared\ServiceShared.csproj", "{AD352855-70D4-4921-8CB0-AD946CCBE823}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{5F668877-0590-4259-8CB7-0332F1988D95}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F668877-0590-4259-8CB7-0332F1988D95}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F668877-0590-4259-8CB7-0332F1988D95}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD352855-70D4-4921-8CB0-AD946CCBE823}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD352855-70D4-4921-8CB0-AD946CCBE823}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD352855-70D4-4921-8CB0-AD946CCBE823}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD352855-70D4-4921-8CB0-AD946CCBE823}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

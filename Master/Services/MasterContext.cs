@@ -18,7 +18,7 @@ public class MasterContext : DbContext
         optionsBuilder.LogTo(Console.WriteLine).EnableDetailedErrors();
         base.OnConfiguring(optionsBuilder);
     }
-    public virtual DbSet<User> Users { get; set; }
+    public virtual DbSet<LoginUser> LoginUsers { get; set; }
     public virtual DbSet<Database> Databases { get; set; }
     public virtual DbSet<DatabaseUser> DatabaseUsers { get; set; }
 

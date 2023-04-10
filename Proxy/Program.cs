@@ -1,16 +1,24 @@
+using Proxy;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddTransient<InjectionMiddleware>();
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.AllowAnyOrigin()
-        .AllowAnyHeader()
-        .AllowAnyMethod();
-    });
-});
+
 var app = builder.Build();
-app.UseCors();
+if (app.Environment.IsDevelopment())
+{
+    app.UseWebAssemblyDebugging();
+}
+else
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
+}
+app.UseMiddleware<InjectionMiddleware>();
+app.UseHttpsRedirection();
+app.UseBlazorFrameworkFiles();
+app.UseStaticFiles();
 app.MapReverseProxy();
+app.MapFallbackToFile("index.html");
 app.Run();

@@ -1,6 +1,6 @@
 ﻿@page "/Login"
 @inject IStringLocalizer<Resource> R
-@inject StateContainer stateContainer
+@inject StateContainer StateContainer
 @inject ApiService ApiService
 @inject NavigationManager NavigationManager
 <PageTitle>@R["Login"]</PageTitle>
@@ -10,110 +10,148 @@
         <h1>@R["Login"]</h1>
         <div class="mb-3">
             <label for="username" class="form-label">@R["Username"]</label>
-            <input type="text" class="form-control" id="username" @bind="loginRequest.Username" />
+            <input type="text" class="form-control" id="username" @bind="username" />
         </div>
         <div class="mb-3">
             <label for="password" class="form-label">@R["Password"]</label>
-            <input type="password" class="form-control" id="password" @bind="loginRequest.Password">
+            <input type="password" class="form-control" id="password" @bind="password">
         </div>
-        @if (stateContainer.LoginUser!=null 
-         && stateContainer.LoginUser.Databases!= null
-        && stateContainer.LoginUser.Databases.Count > 1)
+        @if (StateContainer.LoginUser.Databases.Count > 1)
         {
             <div class="mb-3">
                 <select class="form-select mt-1" @onchange="@((ChangeEventArgs e) => selectDatabase(e))">
                     <option value="">@R["Select database"]</option>
-                    @foreach (var item in stateContainer.LoginUser.Databases)
+                    @foreach (var item in StateContainer.LoginUser.Databases)
                     {
                         <option class="dropdown-item" value="@item">@item</option>
                     }
                 </select>
             </div>
         }
-        <button type="button" class="btn btn-primary m-1" @onclick="LoginAsync" disabled=@spinner?.IsBusy>@R["Login"]</button>
+        else
+        {
+            <button type="button" class="btn btn-primary m-1" @onclick="LoginAsync" disabled=@spinner?.IsBusy>@R["Login"]</button>
+        }
         <Spinner @ref="spinner"></Spinner>
         <SmallAlert @ref="alert"></SmallAlert>
     </form>
 </div>
 
 @code {
-    private LoginRequest loginRequest { get; set; } = new() { Username = "", Password = "" };
+    private string username = "";
+    private string password = "";
     private SmallAlert? alert;
     private Spinner? spinner;
-    private string database = "";
     private async Task selectDatabase(ChangeEventArgs e)
     {
-        database = e.Value.ToString();
-        await LoginAsync();
+        if (e.Value == null) return;
+        var database = e.Value.ToString() ?? "";
+        if (StateContainer.LoginUser.Databases.FirstOrDefault(database) == null)
+        {
+            alert?.Show(R["Invalid databasename."], "280px");
+        }
+        else
+        {
+            StateContainer.LoginUser.CurrentDatabase = database;
+            await LoginAsync();
+        }
     }
     private async Task LoginAsync()
     {
         try
         {
-            if (database == "")
+            if (StateContainer.LoginUser.CurrentDatabase == "")
             {
                 bool isOk= await LoginMasterAsync();
                 if (isOk == false) return;
             }
+            spinner?.On();
             bool isOk2 = await LoginClientDBAsync();
-            if (isOk2 == false) return;
-            NavigationManager.NavigateTo("/");
+            spinner?.Off();
+            if (isOk2)
+            {
+                NavigationManager.NavigateTo("/");
+            }
 
         }
         catch (Exception e)
         {
-            if (spinner != null) spinner.Off();
-            if (alert != null) alert.Show(e.Message, "280px");
+            spinner?.Off();
+            alert?.Show(e.Message, "280px");
         }
     }
     private async Task<bool> LoginMasterAsync()
     {
-        if (spinner != null) spinner.On();
-        LoginUser? message = await ApiService.PostAsync<LoginUser>("Master/Login", loginRequest);
-        if (spinner != null) spinner.Off();
-        if (message == null || message.AuthToken == "")
+        spinner?.On();
+        dynamic loginRequest = new ExpandoObject();
+        loginRequest.Username=username;
+        loginRequest.Password=password;
+
+        LoginUserResponse? response = await ApiService.PostAsync<LoginUserResponse>("Master/Login", loginRequest);
+        spinner?.Off();
+        if (response == null)
         {
-            if (alert != null) alert.Show("Login attempt failed.", "200px");
+            alert?.Show(R["Login attempt failed."], "200px");
             return false;
         }
-        stateContainer.LoginUser = message;
-        if (message.Databases != null)
+        if (response.Status == -1)
         {
-            if (message.Databases.Count > 1)
-            {
-                return false;
-            }
-            database = message.Databases.First();
+            alert?.Show(R[response.Message], "200px");
+            return false;
+
         }
-        else if (message.Databases == null || message.Databases.Any() == false)
+        if (response.LoginUser.Databases.Any() == false)
         {
-            if (alert != null) alert.Show(R["User has no databases connected"], "280px");
+            alert?.Show(R["User has no databases connected"], "280px");
             return false;
         }
-        if (stateContainer.LoginUser == null 
-            ||stateContainer.LoginUser.Databases ==null
-            ||stateContainer.LoginUser.Databases.FirstOrDefault(database) == null)
+        StateContainer.SetLoginUser(response.LoginUser);
+        if (StateContainer.LoginUser.Databases.Count > 1)
         {
-            if (alert != null) alert.Show(R["Invalid databasename."], "280px");
+            return false;
+        }
+        StateContainer.LoginUser.CurrentDatabase = StateContainer.LoginUser.Databases.First();
+        return true;
+    }
+    private async Task<bool> SetLoginDBsync()
+    {
+
+        dynamic request = new ExpandoObject();
+        request.DatabaseName = StateContainer.LoginUser.CurrentDatabase;
+        BaseResponse? response = await ApiService.PostAsync<BaseResponse>("Master/SetLoginUserDatabase", request);
+        if (response == null)
+        {
+            alert?.Show(R["User database selection failed."], "280px");
+            return false;
+        }
+        if (response.Status == -1)
+        {
+            alert?.Show(R[response.Message], "200px");
             return false;
         }
         return true;
     }
+
+
     private async Task<bool> LoginClientDBAsync()
     {
-        SeUserDatabaseRequest request = new() { DatabaseName = database };
-        LoginUser? message2 = await ApiService.PostAsync<LoginUser>("Master/SetLoginUserDatabase", request);
-        if (message2 == null || message2.UserName == "")
+        bool result = await SetLoginDBsync();
+        if (result==false) return false;
+
+        dynamic request = new ExpandoObject();
+        UserResponse? response = await ApiService.PostAsync<UserResponse>("(db)/Login", request);
+        if (response == null)
         {
-            if (alert != null) alert.Show(R["User database selection failed."], "280px");
+            alert?.Show("Login attempt failed.", "200px");
             return false;
         }
-        CurrentUser? message3 = await ApiService.PostAsync<CurrentUser>(database + "/Login", loginRequest);
-        if (message3 == null || message3.Username == "")
+        if (response.Status == -1)
         {
-            if (alert != null) alert.Show("Login attempt failed.", "200px");
+            alert?.Show(R[response.Message], "200px");
             return false;
         }
+        
+        StateContainer.SetCurrentUser(response.User);
         return true;
 
     }
